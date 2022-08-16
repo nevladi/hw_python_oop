@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -10,15 +10,16 @@ class InfoMessage:
     distance: float
     speed: float
     calories: float
+    INFO = (
+        'Тип тренировки: {training_type}; '
+        'Длительность: {duration:.3f} ч.; '
+        'Дистанция: {distance:.3f} км; '
+        'Ср. скорость: {speed:.3f} км/ч; '
+        'Потрачено ккал: {calories:.3f}.'
+    )
 
     def get_message(self) -> str:
-        return (
-            f'Тип тренировки: {self.training_type}; '
-            f'Длительность: {self.duration:.3f} ч.; '
-            f'Дистанция: {self.distance:.3f} км; '
-            f'Ср. скорость: {self.speed:.3f} км/ч; '
-            f'Потрачено ккал: {self.calories:.3f}.'
-        )
+        return self.INFO.format(**asdict(self))
 
 
 class Training:
@@ -39,17 +40,15 @@ class Training:
 
     def get_distance(self) -> float:
         """Получить дистанцию в км."""
-
         return self.action * self.LEN_STEP / self.M_IN_KM
 
     def get_mean_speed(self) -> float:
         """Получить среднюю скорость движения."""
-
         return self.get_distance() / self.duration
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        pass
+        raise NotImplementedError('Метод здесь не выполняется')
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -65,8 +64,8 @@ class Training:
 class Running(Training):
     """Тренировка: бег."""
 
-    COEFF_CALORIE_1: float = 18
-    COEFF_CALORIE_2: float = 20
+    COEFF_CALORIE_1: int = 18
+    COEFF_CALORIE_2: int = 20
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
@@ -109,8 +108,8 @@ class Swimming(Training):
     """Тренировка: плавание."""
 
     LEN_STEP: float = 1.38
-    COEFF_CALORIE_1 = 1.1
-    COEFF_CALORIE_2 = 2
+    COEFF_CALORIE_1: float = 1.1
+    COEFF_CALORIE_2: int = 2
 
     def __init__(self,
                  action: int,
@@ -128,26 +127,26 @@ class Swimming(Training):
 
     def get_mean_speed(self) -> float:
         """Получить среднюю скорость движения."""
-
         form_1 = self.length_pool * self.count_pool
         return form_1 / self.M_IN_KM / self.duration
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-
         form_2 = self.get_mean_speed() + self.COEFF_CALORIE_1
         return form_2 * self.COEFF_CALORIE_2 * self.weight
 
 
 def read_package(workout_type: str, data: list) -> Training:
     """Прочитать данные полученные от датчиков."""
-    dict_training = {
+    dict_training: dict[str, type[Training]] = {
         'SWM': Swimming,
         'RUN': Running,
         'WLK': SportsWalking,
     }
     if workout_type in dict_training.keys():
         return dict_training[workout_type](*data)
+    else:
+        raise ValueError('Результат тренировки недоступен')
 
 
 def main(training: Training) -> None:
